@@ -32,7 +32,7 @@ export default {
     async fetchNews() {
       try {
         this.loading = true
-        const response = await axios.get('https://autosportstech-backend.onrender.com/')
+        const response = await axios.get('https://autosportstech-backend.onrender.com/api/news')
         this.news = response.data
       } catch (error) {
         console.error('Error fetching news:', error)
