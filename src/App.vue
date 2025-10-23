@@ -1,49 +1,62 @@
 <template>
   <div id="app">
-    <h1>AutoSportsTech Daily Sports News</h1>
-    <div v-if="news.length === 0">Loading news...</div>
-    <div v-for="(item, index) in news" :key="index" class="news-card">
-      <h2>{{ item.headline }}</h2>
-      <p>{{ item.content }}</p>
-      <small>{{ item.sport }} | {{ item.date }}</small>
-    </div>
+    <h1>Autosports Dashboard</h1>
+
+    <section>
+      <h2>Matches</h2>
+      <ul>
+        <li v-for="match in matches" :key="match.id">{{ match.name }}</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Teams</h2>
+      <ul>
+        <li v-for="team in teams" :key="team.id">{{ team.name }}</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Players</h2>
+      <ul>
+        <li v-for="player in players" :key="player.id">{{ player.name }}</li>
+      </ul>
+    </section>
   </div>
 </template>
 
 <script>
-import axios from 'axios';
+import { fetchData } from './api.js';
 
 export default {
-  name: 'App',
   data() {
     return {
-      news: []
-    }
+      matches: [],
+      teams: [],
+      players: []
+    };
   },
-  mounted() {
-    axios.get('http://127.0.0.1:8000/api/news')  // Backend endpoint
-      .then(response => {
-        this.news = response.data;
-      })
-      .catch(error => {
-        console.error('Error fetching news:', error);
-      });
+  async mounted() {
+    this.matches = await fetchData('/matches');
+    this.teams = await fetchData('/teams');
+    this.players = await fetchData('/players');
   }
 }
 </script>
 
 <style>
 #app {
-  font-family: Arial, sans-serif;
   max-width: 800px;
   margin: auto;
+  font-family: sans-serif;
   padding: 20px;
 }
-.news-card {
-  border: 1px solid #ddd;
-  padding: 15px;
-  margin-bottom: 15px;
-  border-radius: 6px;
-  background-color: #f9f9f9;
+
+h1 {
+  text-align: center;
+}
+
+section {
+  margin-bottom: 30px;
 }
 </style>
