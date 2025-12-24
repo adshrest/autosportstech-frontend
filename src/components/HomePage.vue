@@ -2,22 +2,27 @@
   <div class="home">
     <h1>Autosports Tech</h1>
 
-    <div v-if="loading">Fetching latest sports news...</div>
+    <!-- Main News -->
+    <div v-if="loading">Fetching backend data...</div>
 
     <div v-else>
-      <h2>📰 Latest News</h2>
+      <div v-if="news.length === 0">No news available today.</div>
 
-      <div v-for="(item, index) in news" :key="index" class="news-item">
-        <h3>{{ item.title }}</h3>
-        <p><strong>{{ item.category }}</strong></p>
-        <p>{{ item.content }}</p>
-        <a :href="item.link" target="_blank">Read full article</a>
-      </div>
+      <ul v-else>
+        <li v-for="(item, index) in news" :key="index" class="news-item">
+          <h3>{{ item.title }}</h3>
+          <p v-if="item.content">{{ item.content }}</p>
+          <a v-if="item.url" :href="item.url" target="_blank">Read more</a>
+        </li>
+      </ul>
+    </div>
 
-      <h2>🔥 Trending</h2>
+    <!-- Trending News -->
+    <div class="trending">
+      <h2>Trending News</h2>
       <ul>
         <li v-for="(item, index) in trending" :key="index">
-          <a :href="item.link" target="_blank">{{ item.title }}</a>
+          <a :href="item.url" target="_blank">{{ item.title }}</a>
         </li>
       </ul>
     </div>
@@ -33,62 +38,75 @@ export default {
     return {
       news: [],
       trending: [],
-      loading: true
+      loading: true,
     }
-  },
-  async mounted() {
-    await this.fetchNews()
-    await this.fetchTrending()
-
-    // Refresh once every 24 hours
-    setInterval(() => {
-      this.fetchNews()
-      this.fetchTrending()
-    }, 86400000)
   },
   methods: {
     async fetchNews() {
       try {
-        const res = await axios.get(
-          'https://autosportstech-backend.onrender.com/api/news'
-        )
-        this.news = res.data
-      } catch {
-        this.news = []
+        this.loading = true
+        const response = await axios.get('https://autosportstech-backend.onrender.com/api/news')
+        this.news = response.data
+      } catch (error) {
+        console.error('Error fetching news:', error)
+        this.news = [{ title: 'Error', content: 'Could not fetch news. Please try again later.', url: '#' }]
       } finally {
         this.loading = false
       }
     },
     async fetchTrending() {
-      const res = await axios.get(
-        'https://autosportstech-backend.onrender.com/api/trending'
-      )
-      this.trending = res.data
+      try {
+        const response = await axios.get('https://autosportstech-backend.onrender.com/api/trending')
+        this.trending = response.data
+      } catch (err) {
+        console.error('Error fetching trending news:', err)
+        this.trending = [{ title: 'Error', url: '#' }]
+      }
     }
+  },
+  mounted() {
+    this.fetchNews()
+    this.fetchTrending()
+
+    // Refresh daily
+    setInterval(() => {
+      this.fetchNews()
+      this.fetchTrending()
+    }, 24 * 60 * 60 * 1000)
   }
 }
 </script>
 
 <style scoped>
 .home {
-  max-width: 900px;
-  margin: auto;
   padding: 20px;
   font-family: Arial, sans-serif;
 }
 
 .news-item {
-  margin-bottom: 25px;
-  padding-bottom: 15px;
+  margin-bottom: 20px;
   border-bottom: 1px solid #ccc;
+  padding-bottom: 10px;
 }
 
 .news-item h3 {
+  margin: 0 0 5px 0;
+}
+
+.news-item p {
   margin: 0;
 }
 
-a {
-  color: #1e88e5;
-  text-decoration: none;
+.trending {
+  margin-top: 40px;
+}
+
+.trending ul {
+  list-style: none;
+  padding: 0;
+}
+
+.trending li {
+  margin-bottom: 10px;
 }
 </style>
