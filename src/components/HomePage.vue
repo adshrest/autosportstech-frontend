@@ -1,74 +1,64 @@
 <template>
   <div class="home">
     <h1>SportsRead</h1>
-
     <div v-if="loading">Fetching backend data...</div>
-
     <div v-else>
-      <div v-if="news.length === 0">No news available today.</div>
-
-      <div v-else>
-        <div v-for="sport in sports" :key="sport" class="sport-section">
-          <h2>{{ sport }}</h2>
-          <div class="news-list">
-            <div
-              v-for="(item, index) in groupedNews[sport]"
-              :key="index"
-              class="news-item"
-            >
-              <a :href="item.url" target="_blank">
-                <img v-if="item.image" :src="item.image" alt="News Image" />
-                <h3>{{ item.title }}</h3>
-              </a>
-            </div>
-          </div>
-        </div>
+      <div v-for="(items, sport) in news" :key="sport" class="sport-group" v-if="sport !== 'last_updated'">
+        <h2>{{ sport }}</h2>
+        <ul>
+          <li v-for="(item, index) in items" :key="index" class="news-item">
+            <a :href="item.link" target="_blank">
+              <img v-if="item.image" :src="item.image" alt="image" class="news-image"/>
+              <span>{{ item.title }}</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+      <div class="last-updated">
+        Last updated: {{ news.last_updated }}
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import axios from "axios";
+import axios from "axios"
 
 export default {
   name: "HomePage",
   data() {
     return {
-      news: [],
-      loading: true,
-      sports: ["Football", "Cricket", "Basketball", "Tennis", "Others"],
-      groupedNews: {},
-    };
+      news: {},
+      loading: true
+    }
   },
   methods: {
     async fetchNews() {
       try {
-        this.loading = true;
-        const response = await axios.get(
-          "https://autosportstech-backend.onrender.com/api/news"
-        );
-        this.news = response.data;
-
-        // Group news by sport
-        const grouped = {};
-        this.sports.forEach((sport) => {
-          grouped[sport] = this.news.filter((n) => n.sport === sport);
-        });
-        this.groupedNews = grouped;
+        this.loading = true
+        const response = await axios.get("https://autosportstech-backend.onrender.com/api/news")
+        this.news = response.data
       } catch (error) {
-        console.error("Error fetching news:", error);
-        this.news = [];
+        console.error("Error fetching news:", error)
+        this.news = {
+          Football: [{ title: "Error fetching news", link: "", sport: "Football", image: null }],
+          Cricket: [{ title: "Error fetching news", link: "", sport: "Cricket", image: null }],
+          Basketball: [{ title: "Error fetching news", link: "", sport: "Basketball", image: null }],
+          Tennis: [{ title: "Error fetching news", link: "", sport: "Tennis", image: null }],
+          Others: [{ title: "Error fetching news", link: "", sport: "Others", image: null }]
+        }
       } finally {
-        this.loading = false;
+        this.loading = false
       }
-    },
+    }
   },
   mounted() {
-    this.fetchNews();
-    setInterval(this.fetchNews, 60 * 60 * 1000); // refresh hourly
-  },
-};
+    this.fetchNews()
+    setInterval(() => {
+      this.fetchNews()
+    }, 60 * 60 * 1000) // hourly
+  }
+}
 </script>
 
 <style scoped>
@@ -77,38 +67,36 @@ export default {
   font-family: Arial, sans-serif;
 }
 
-.sport-section {
-  margin-bottom: 40px;
-}
-
-.news-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
+.sport-group {
+  margin-bottom: 30px;
 }
 
 .news-item {
-  width: 250px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  overflow: hidden;
-  padding: 10px;
-  background: #f9f9f9;
-  transition: transform 0.2s;
+  margin-bottom: 10px;
+  list-style: none;
 }
 
-.news-item:hover {
-  transform: scale(1.03);
+.news-item a {
+  text-decoration: none;
+  color: #000;
+  display: flex;
+  align-items: center;
 }
 
-.news-item img {
-  width: 100%;
-  height: auto;
+.news-item a:hover {
+  color: #007BFF;
+}
+
+.news-image {
+  width: 60px;
+  height: 60px;
   object-fit: cover;
+  margin-right: 10px;
 }
 
-.news-item h3 {
-  font-size: 16px;
-  margin: 10px 0 0;
+.last-updated {
+  margin-top: 20px;
+  font-size: 12px;
+  color: gray;
 }
 </style>
