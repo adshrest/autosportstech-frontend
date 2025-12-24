@@ -2,29 +2,45 @@
   <div class="home">
     <h1>Autosports Tech</h1>
 
-    <!-- Main News -->
     <div v-if="loading">Fetching backend data...</div>
 
     <div v-else>
-      <div v-if="news.length === 0">No news available today.</div>
+      <!-- Trending News -->
+      <div v-if="trending.length">
+        <h2>Trending News</h2>
+        <ul>
+          <li v-for="(item, index) in trending" :key="index" class="news-item">
+            <a :href="item.link" target="_blank">
+              <img v-if="item.image" :src="item.image" class="news-image"/>
+              <h3>{{ item.title }}</h3>
+            </a>
+            <p v-if="item.content">{{ item.content }}</p>
+          </li>
+        </ul>
+      </div>
 
-      <ul v-else>
-        <li v-for="(item, index) in news" :key="index" class="news-item">
-          <h3>{{ item.title }}</h3>
-          <p v-if="item.content">{{ item.content }}</p>
-          <a v-if="item.url" :href="item.url" target="_blank">Read more</a>
-        </li>
-      </ul>
-    </div>
+      <!-- Latest News -->
+      <div v-if="latest.length">
+        <h2>Latest News</h2>
+        <ul>
+          <li v-for="(item, index) in visibleLatest" :key="index" class="news-item">
+            <a :href="item.link" target="_blank">
+              <img v-if="item.image" :src="item.image" class="news-image"/>
+              <h3>{{ item.title }}</h3>
+            </a>
+            <p v-if="item.content">{{ item.content }}</p>
+          </li>
+        </ul>
 
-    <!-- Trending News -->
-    <div class="trending">
-      <h2>Trending News</h2>
-      <ul>
-        <li v-for="(item, index) in trending" :key="index">
-          <a :href="item.url" target="_blank">{{ item.title }}</a>
-        </li>
-      </ul>
+        <!-- Load More button -->
+        <button v-if="visibleLatest.length < latest.length" @click="loadMore">
+          Load More
+        </button>
+      </div>
+
+      <div v-if="trending.length === 0 && latest.length === 0">
+        No news available today.
+      </div>
     </div>
   </div>
 </template>
@@ -36,8 +52,10 @@ export default {
   name: 'HomePage',
   data() {
     return {
-      news: [],
       trending: [],
+      latest: [],
+      visibleLatest: [],
+      latestBatch: 10,   // number of latest news to show per batch
       loading: true,
     }
   },
@@ -46,33 +64,30 @@ export default {
       try {
         this.loading = true
         const response = await axios.get('https://autosportstech-backend.onrender.com/api/news')
-        this.news = response.data
+        this.trending = response.data.trending || []
+        this.latest = response.data.latest || []
+        this.visibleLatest = this.latest.slice(0, this.latestBatch)
       } catch (error) {
         console.error('Error fetching news:', error)
-        this.news = [{ title: 'Error', content: 'Could not fetch news. Please try again later.', url: '#' }]
+        this.trending = [{ title: 'Error', content: '', link: '#' }]
+        this.latest = [{ title: 'Error', content: '', link: '#' }]
+        this.visibleLatest = this.latest.slice(0, this.latestBatch)
       } finally {
         this.loading = false
       }
     },
-    async fetchTrending() {
-      try {
-        const response = await axios.get('https://autosportstech-backend.onrender.com/api/trending')
-        this.trending = response.data
-      } catch (err) {
-        console.error('Error fetching trending news:', err)
-        this.trending = [{ title: 'Error', url: '#' }]
-      }
+    loadMore() {
+      const nextBatch = this.visibleLatest.length + this.latestBatch
+      this.visibleLatest = this.latest.slice(0, nextBatch)
     }
   },
   mounted() {
     this.fetchNews()
-    this.fetchTrending()
 
-    // Refresh daily
+    // Refresh news every hour (3600000 ms)
     setInterval(() => {
       this.fetchNews()
-      this.fetchTrending()
-    }, 24 * 60 * 60 * 1000)
+    }, 60 * 60 * 1000)
   }
 }
 </script>
@@ -90,23 +105,23 @@ export default {
 }
 
 .news-item h3 {
-  margin: 0 0 5px 0;
-}
-
-.news-item p {
   margin: 0;
 }
 
-.trending {
-  margin-top: 40px;
+.news-item p {
+  margin: 5px 0;
 }
 
-.trending ul {
-  list-style: none;
-  padding: 0;
+.news-image {
+  max-width: 200px;
+  display: block;
+  margin-bottom: 5px;
 }
 
-.trending li {
-  margin-bottom: 10px;
+button {
+  padding: 10px 15px;
+  margin: 15px 0;
+  font-size: 14px;
+  cursor: pointer;
 }
 </style>
