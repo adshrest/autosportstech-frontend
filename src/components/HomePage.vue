@@ -1,22 +1,22 @@
 <template>
-  <div class="home">
+  <div class="container">
     <h1>SportsRead</h1>
 
-    <div v-if="loading">Fetching backend data...</div>
+    <div v-for="(items, sport) in groupedNews" :key="sport" v-if="items.length">
+      <h2>{{ sport }}</h2>
 
-    <div v-else>
-      <div v-for="(items, sport) in groupedNews" :key="sport" class="sport-section">
-        <h2>{{ sport }}</h2>
-        <div v-if="items.length === 0">No news today.</div>
-        <div v-else class="news-list">
-          <div v-for="(item, index) in items" :key="index" class="news-item">
-            <a :href="item.url" target="_blank" rel="noopener">
-              <h3>{{ item.title }}</h3>
-              <p>{{ item.content }}</p>
-              <img v-if="item.image" :src="item.image" alt="News image" />
-            </a>
-          </div>
-        </div>
+      <div class="grid">
+        <a
+          v-for="(item, i) in items"
+          :key="i"
+          :href="item.url"
+          target="_blank"
+          class="card"
+        >
+          <img v-if="item.image" :src="item.image" />
+          <h3>{{ item.title }}</h3>
+          <p>{{ item.content }}</p>
+        </a>
       </div>
     </div>
   </div>
@@ -29,74 +29,77 @@ export default {
   name: "HomePage",
   data() {
     return {
-      news: [],
-      loading: true
+      news: []
     }
   },
   computed: {
     groupedNews() {
-      const grouped = {}
-      this.news.forEach(item => {
-        if (!item.sport) item.sport = "Others"
-        if (!grouped[item.sport]) grouped[item.sport] = []
-        grouped[item.sport].push(item)
+      const groups = {
+        Football: [],
+        Soccer: [],
+        Cricket: [],
+        Basketball: [],
+        Tennis: [],
+        Others: []
+      }
+
+      this.news.forEach(n => {
+        if (groups[n.sport]) groups[n.sport].push(n)
+        else groups.Others.push(n)
       })
-      return grouped
+
+      return groups
     }
+  },
+  async mounted() {
+    await this.fetchNews()
+    setInterval(this.fetchNews, 60 * 60 * 1000) // hourly
   },
   methods: {
     async fetchNews() {
-      try {
-        this.loading = true
-        const response = await axios.get("https://autosportstech-backend.onrender.com/api/news")
-        this.news = response.data
-      } catch (error) {
-        console.error("Error fetching news:", error)
-        this.news = []
-      } finally {
-        this.loading = false
-      }
+      const res = await axios.get(
+        "https://autosportstech-backend.onrender.com/api/news"
+      )
+      this.news = res.data
     }
-  },
-  mounted() {
-    this.fetchNews()
-    // refresh hourly
-    setInterval(() => this.fetchNews(), 60 * 60 * 1000)
   }
 }
 </script>
 
 <style scoped>
-.home {
+.container {
+  max-width: 1200px;
+  margin: auto;
   padding: 20px;
-  font-family: Arial, sans-serif;
+  font-family: Arial;
 }
 
-.sport-section {
-  margin-bottom: 30px;
+h1 {
+  text-align: center;
 }
 
-.news-list {
-  display: flex;
-  flex-direction: column;
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
 }
 
-.news-item {
-  margin-bottom: 20px;
-  border-bottom: 1px solid #ccc;
-  padding-bottom: 10px;
+.card {
+  text-decoration: none;
+  color: black;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 6px;
+  background: #fff;
 }
 
-.news-item h3 {
-  margin: 0 0 5px 0;
+.card:hover {
+  background: #f5f5f5;
 }
 
-.news-item p {
-  margin: 0;
-}
-
-.news-item img {
-  max-width: 100%;
-  margin-top: 5px;
+img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
 }
 </style>
