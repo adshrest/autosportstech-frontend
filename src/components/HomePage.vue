@@ -5,16 +5,22 @@
     <div v-if="loading">Fetching backend data...</div>
 
     <div v-else>
-      <div v-for="(items, sport) in news" :key="sport" class="sport-section">
-        <h2>{{ sport }}</h2>
-        <div v-if="items.length === 0">No news available.</div>
+      <div v-if="news.length === 0">No news available today.</div>
 
-        <div v-else class="news-grid">
-          <div v-for="(item, index) in items" :key="index" class="news-item">
-            <a :href="item.link" target="_blank" rel="noopener noreferrer">
-              <img v-if="item.image" :src="item.image" :alt="item.title" />
-              <h3>{{ item.title }}</h3>
-            </a>
+      <div v-else>
+        <div v-for="sport in sports" :key="sport" class="sport-section">
+          <h2>{{ sport }}</h2>
+          <div class="news-list">
+            <div
+              v-for="(item, index) in groupedNews[sport]"
+              :key="index"
+              class="news-item"
+            >
+              <a :href="item.url" target="_blank">
+                <img v-if="item.image" :src="item.image" alt="News Image" />
+                <h3>{{ item.title }}</h3>
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -23,39 +29,46 @@
 </template>
 
 <script>
-import axios from 'axios'
+import axios from "axios";
 
 export default {
-  name: 'HomePage',
+  name: "HomePage",
   data() {
     return {
-      news: {},
-      loading: true
-    }
+      news: [],
+      loading: true,
+      sports: ["Football", "Cricket", "Basketball", "Tennis", "Others"],
+      groupedNews: {},
+    };
   },
   methods: {
     async fetchNews() {
       try {
-        this.loading = true
-        const response = await axios.get('https://autosportstech-backend.onrender.com/api/news')
-        this.news = response.data
+        this.loading = true;
+        const response = await axios.get(
+          "https://autosportstech-backend.onrender.com/api/news"
+        );
+        this.news = response.data;
+
+        // Group news by sport
+        const grouped = {};
+        this.sports.forEach((sport) => {
+          grouped[sport] = this.news.filter((n) => n.sport === sport);
+        });
+        this.groupedNews = grouped;
       } catch (error) {
-        console.error('Error fetching news:', error)
-        this.news = {
-          "Error": [{ title: "Could not fetch news", link: "#", image: null }]
-        }
+        console.error("Error fetching news:", error);
+        this.news = [];
       } finally {
-        this.loading = false
+        this.loading = false;
       }
-    }
+    },
   },
   mounted() {
-    this.fetchNews()
-    setInterval(() => {
-      this.fetchNews()
-    }, 60 * 60 * 1000) // refresh hourly
-  }
-}
+    this.fetchNews();
+    setInterval(this.fetchNews, 60 * 60 * 1000); // refresh hourly
+  },
+};
 </script>
 
 <style scoped>
@@ -68,7 +81,7 @@ export default {
   margin-bottom: 40px;
 }
 
-.news-grid {
+.news-list {
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
@@ -76,25 +89,26 @@ export default {
 
 .news-item {
   width: 250px;
-  border: 1px solid #ddd;
-  padding: 10px;
+  border: 1px solid #ccc;
   border-radius: 6px;
+  overflow: hidden;
+  padding: 10px;
+  background: #f9f9f9;
   transition: transform 0.2s;
 }
 
 .news-item:hover {
-  transform: scale(1.02);
+  transform: scale(1.03);
 }
 
 .news-item img {
   width: 100%;
-  height: 140px;
+  height: auto;
   object-fit: cover;
-  border-radius: 4px;
 }
 
 .news-item h3 {
   font-size: 16px;
-  margin-top: 10px;
+  margin: 10px 0 0;
 }
 </style>
