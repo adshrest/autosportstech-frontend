@@ -2,12 +2,14 @@
   <div class="home">
     <h1>SportsRead</h1>
 
-    <div v-if="loading">Fetching latest sports news...</div>
+    <div v-if="loading">Fetching backend data...</div>
 
     <div v-else>
       <div v-for="(items, sport) in news" :key="sport" class="sport-section">
         <h2>{{ sport }}</h2>
-        <div class="news-grid">
+        <div v-if="items.length === 0">No news available.</div>
+
+        <div v-else class="news-grid">
           <div v-for="(item, index) in items" :key="index" class="news-item">
             <a :href="item.link" target="_blank" rel="noopener noreferrer">
               <img v-if="item.image" :src="item.image" :alt="item.title" />
@@ -21,90 +23,78 @@
 </template>
 
 <script>
-import axios from "axios";
+import axios from 'axios'
 
 export default {
-  name: "HomePage",
+  name: 'HomePage',
   data() {
     return {
       news: {},
       loading: true
-    };
+    }
   },
   methods: {
     async fetchNews() {
       try {
-        this.loading = true;
-        const response = await axios.get(
-          "https://autosportstech-backend.onrender.com/api/news"
-        );
-        this.news = response.data;
+        this.loading = true
+        const response = await axios.get('https://autosportstech-backend.onrender.com/api/news')
+        this.news = response.data
       } catch (error) {
-        console.error("Error fetching news:", error);
+        console.error('Error fetching news:', error)
+        this.news = {
+          "Error": [{ title: "Could not fetch news", link: "#", image: null }]
+        }
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     }
   },
   mounted() {
-    // Initial fetch
-    this.fetchNews();
-    // Refresh hourly (3600000ms)
-    setInterval(() => this.fetchNews(), 60 * 60 * 1000);
+    this.fetchNews()
+    setInterval(() => {
+      this.fetchNews()
+    }, 60 * 60 * 1000) // refresh hourly
   }
-};
+}
 </script>
 
 <style scoped>
 .home {
   padding: 20px;
   font-family: Arial, sans-serif;
-  background: #f4f4f4;
-}
-
-h1 {
-  text-align: center;
-  color: #222;
 }
 
 .sport-section {
   margin-bottom: 40px;
 }
 
-.sport-section h2 {
-  color: #0077cc;
-  border-bottom: 2px solid #0077cc;
-  padding-bottom: 5px;
-  margin-bottom: 20px;
-}
-
 .news-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
 }
 
 .news-item {
-  background: #fff;
+  width: 250px;
+  border: 1px solid #ddd;
   padding: 10px;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  border-radius: 6px;
   transition: transform 0.2s;
 }
 
 .news-item:hover {
-  transform: translateY(-3px);
+  transform: scale(1.02);
 }
 
 .news-item img {
   width: 100%;
-  height: auto;
+  height: 140px;
+  object-fit: cover;
   border-radius: 4px;
 }
 
 .news-item h3 {
   font-size: 16px;
-  margin: 10px 0 0;
-  color: #333;
+  margin-top: 10px;
 }
 </style>
